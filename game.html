@@ -124,6 +124,7 @@
     </header>
     <main>
         <div class="game-container">
+            <div id="timer" style="font-size:1.3rem; font-weight:bold; margin-bottom:1rem;">Time: 0s</div>
             <div class="hint-row" id="hint-row"></div>
             <div class="drop-row">
                 <div class="drop-zone" id="drop-0" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
@@ -142,7 +143,9 @@
             </div>
         </div>
         <button class="heart-btn" onclick="location.href='index.html'">Back to Home</button>
-        <button class="heart-btn" onclick="resetGame()">Reset Game</button>
+        <button class="heart-btn" onclick="resetGame()">New Game</button>
+        <button class="heart-btn" onclick="resetOrder()">Reset Order</button>
+        <button class="heart-btn" onclick="checkOrder()">Check Order</button>
     </main>
     <footer>
         <p>&copy; 2025 DrMaja. All rights reserved.</p>
@@ -170,7 +173,7 @@
             if (ev.target.classList.contains('drop-zone') && ev.target.children.length === 0) {
                 ev.target.appendChild(dragged);
                 dragged.classList.remove('dragging');
-                checkWin();
+                // checkOrder(); // removed, now only on button press
             }
         }
 
@@ -182,7 +185,7 @@
             if (dragged && !dragRow.contains(dragged)) {
                 dragRow.appendChild(dragged);
                 dragged.classList.remove('dragging');
-                checkWin();
+                // checkOrder(); // removed, now only on button press
             }
             currentlyDraggedId = null;
         }
@@ -204,7 +207,7 @@
                 if (!dragRow.contains(dragged)) {
                     dragRow.appendChild(dragged);
                     dragged.classList.remove('dragging');
-                    checkWin();
+                    // checkOrder(); // removed, now only on button press
                 }
             };
 
@@ -327,7 +330,36 @@
             });
         }
 
-        function checkWin() {
+        // Timer variables
+        let timerInterval = null;
+        let timerSeconds = 0;
+        let timerRunning = false;
+
+        function startTimer() {
+            if (timerRunning) return;
+            timerRunning = true;
+            timerInterval = setInterval(() => {
+                timerSeconds++;
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function stopTimer() {
+            timerRunning = false;
+            clearInterval(timerInterval);
+        }
+
+        function resetTimer() {
+            stopTimer();
+            timerSeconds = 0;
+            updateTimerDisplay();
+        }
+
+        function updateTimerDisplay() {
+            document.getElementById('timer').textContent = `Time: ${timerSeconds}s`;
+        }
+
+        function checkOrder() {
             const order = [];
             for (let i = 0; i < 4; i++) {
                 const dz = document.getElementById('drop-' + i);
@@ -351,6 +383,7 @@
                     setTimeout(() => {
                         lastInvalidPairsInGuess = [];
                         showHint();
+                        stopTimer();
                         alert('You win!');
                     }, 100);
                 } else {
@@ -380,6 +413,19 @@
             });
             lastInvalidPairsInGuess = [];
             showHint();
+            resetTimer();
+            startTimer();
+        }
+
+        function resetOrder() {
+            const dragRow = document.getElementById('drag-row');
+            // Move all blocks back to drag row
+            ['blue', 'red', 'yellow', 'green'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el && !dragRow.contains(el)) {
+                    dragRow.appendChild(el);
+                }
+            });
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -394,13 +440,14 @@
                 if (!dragRow.contains(dragged)) {
                     dragRow.appendChild(dragged);
                     dragged.classList.remove('dragging');
-                    checkWin();
+                    // checkOrder(); // removed, now only on button press
                 }
             };
             lastInvalidPairsInGuess = [];
             showHint();
+            resetTimer();
+            startTimer();
         });
     </script>
 </body>
-</html>
 </html>
