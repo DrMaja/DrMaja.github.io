@@ -130,6 +130,13 @@
                 height: 20px;
             }
         }
+        .dragging-touch {
+            opacity: 0.6;
+            position: absolute !important;
+            z-index: 1000 !important;
+            pointer-events: none !important;
+            touch-action: none !important;
+        }
     </style>
 </head>
 <body>
@@ -442,15 +449,13 @@
             });
         }
 
-        // Touch support for drag and drop
+        // Touch support for drag and drop (improved for mobile)
         function enableTouchDnD() {
-            // Helper to get element at touch position
             function getDropTarget(touch) {
                 const el = document.elementFromPoint(touch.clientX, touch.clientY);
                 if (!el) return null;
                 if (el.classList.contains('drop-zone')) return el;
                 if (el.classList.contains('drag-row')) return el;
-                // If child of drop-zone or drag-row
                 if (el.parentElement && el.parentElement.classList.contains('drop-zone')) return el.parentElement;
                 if (el.parentElement && el.parentElement.classList.contains('drag-row')) return el.parentElement;
                 return null;
@@ -466,42 +471,42 @@
                     touchDragEl = el;
                     origParent = el.parentElement;
                     origNext = el.nextElementSibling;
-                    el.classList.add('dragging');
-                    el.style.zIndex = 1000;
-                    el.style.position = 'absolute';
-                    el.style.pointerEvents = 'none';
+                    el.classList.add('dragging-touch');
+                    el.style.width = getComputedStyle(el).width;
+                    el.style.height = getComputedStyle(el).height;
+                    el.style.left = (e.touches[0].clientX - el.offsetWidth / 2) + 'px';
+                    el.style.top = (e.touches[0].clientY - el.offsetHeight / 2) + 'px';
                     document.body.appendChild(el);
-                    moveAt(e.touches[0]);
+                    document.body.style.touchAction = 'none';
                     e.preventDefault();
                 }, {passive: false});
 
-                function moveAt(touch) {
-                    touchDragEl.style.left = (touch.clientX - touchDragEl.offsetWidth / 2) + 'px';
-                    touchDragEl.style.top = (touch.clientY - touchDragEl.offsetHeight / 2) + 'px';
-                }
-
                 el.addEventListener('touchmove', function(e) {
                     if (!touchDragEl) return;
-                    moveAt(e.touches[0]);
+                    const touch = e.touches[0];
+                    touchDragEl.style.left = (touch.clientX - touchDragEl.offsetWidth / 2) + 'px';
+                    touchDragEl.style.top = (touch.clientY - touchDragEl.offsetHeight / 2) + 'px';
                     e.preventDefault();
                 }, {passive: false});
 
                 el.addEventListener('touchend', function(e) {
                     if (!touchDragEl) return;
-                    touchDragEl.classList.remove('dragging');
+                    let dropTarget = getDropTarget(e.changedTouches[0]);
+                    touchDragEl.classList.remove('dragging-touch');
                     touchDragEl.style.position = '';
                     touchDragEl.style.left = '';
                     touchDragEl.style.top = '';
+                    touchDragEl.style.width = '';
+                    touchDragEl.style.height = '';
                     touchDragEl.style.zIndex = '';
                     touchDragEl.style.pointerEvents = '';
+                    document.body.style.touchAction = '';
 
-                    let dropTarget = getDropTarget(e.changedTouches[0]);
                     if (dropTarget && dropTarget.classList.contains('drop-zone') && dropTarget.children.length === 0) {
                         dropTarget.appendChild(touchDragEl);
                     } else if (dropTarget && dropTarget.classList.contains('drag-row')) {
                         dropTarget.appendChild(touchDragEl);
                     } else {
-                        // If dropped elsewhere, return to drag-row
                         document.getElementById('drag-row').appendChild(touchDragEl);
                     }
                     touchDragEl = null;
