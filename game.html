@@ -115,6 +115,21 @@
             border-radius: 8px;
             background: #ffd6d6;
         }
+
+        @media (max-width: 600px) {
+            .drop-row, .drag-row {
+                gap: 1rem;
+            }
+            .drop-zone, .draggable-square {
+                width: 48px;
+                height: 48px;
+                font-size: 1.1rem;
+            }
+            .hint-color {
+                width: 20px;
+                height: 20px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -139,7 +154,6 @@
                 <div class="draggable-square red" id="red" draggable="true" ondragstart="drag(event)"></div>
                 <div class="draggable-square yellow" id="yellow" draggable="true" ondragstart="drag(event)"></div>
                 <div class="draggable-square green" id="green" draggable="true" ondragstart="drag(event)"></div>
-                <!-- <div class="draggable-square orange" id="orange" draggable="true" ondragstart="drag(event)"></div> -->
             </div>
         </div>
         <button class="heart-btn" onclick="location.href='index.html'">Back to Home</button>
@@ -428,6 +442,76 @@
             });
         }
 
+        // Touch support for drag and drop
+        function enableTouchDnD() {
+            // Helper to get element at touch position
+            function getDropTarget(touch) {
+                const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (!el) return null;
+                if (el.classList.contains('drop-zone')) return el;
+                if (el.classList.contains('drag-row')) return el;
+                // If child of drop-zone or drag-row
+                if (el.parentElement && el.parentElement.classList.contains('drop-zone')) return el.parentElement;
+                if (el.parentElement && el.parentElement.classList.contains('drag-row')) return el.parentElement;
+                return null;
+            }
+
+            let touchDragEl = null;
+            let origParent = null;
+            let origNext = null;
+
+            document.querySelectorAll('.draggable-square').forEach(el => {
+                el.addEventListener('touchstart', function(e) {
+                    if (e.touches.length > 1) return;
+                    touchDragEl = el;
+                    origParent = el.parentElement;
+                    origNext = el.nextElementSibling;
+                    el.classList.add('dragging');
+                    el.style.zIndex = 1000;
+                    el.style.position = 'absolute';
+                    el.style.pointerEvents = 'none';
+                    document.body.appendChild(el);
+                    moveAt(e.touches[0]);
+                    e.preventDefault();
+                }, {passive: false});
+
+                function moveAt(touch) {
+                    touchDragEl.style.left = (touch.clientX - touchDragEl.offsetWidth / 2) + 'px';
+                    touchDragEl.style.top = (touch.clientY - touchDragEl.offsetHeight / 2) + 'px';
+                }
+
+                el.addEventListener('touchmove', function(e) {
+                    if (!touchDragEl) return;
+                    moveAt(e.touches[0]);
+                    e.preventDefault();
+                }, {passive: false});
+
+                el.addEventListener('touchend', function(e) {
+                    if (!touchDragEl) return;
+                    touchDragEl.classList.remove('dragging');
+                    touchDragEl.style.position = '';
+                    touchDragEl.style.left = '';
+                    touchDragEl.style.top = '';
+                    touchDragEl.style.zIndex = '';
+                    touchDragEl.style.pointerEvents = '';
+
+                    let dropTarget = getDropTarget(e.changedTouches[0]);
+                    if (dropTarget && dropTarget.classList.contains('drop-zone') && dropTarget.children.length === 0) {
+                        dropTarget.appendChild(touchDragEl);
+                    } else if (dropTarget && dropTarget.classList.contains('drag-row')) {
+                        dropTarget.appendChild(touchDragEl);
+                    } else {
+                        // If dropped elsewhere, return to drag-row
+                        document.getElementById('drag-row').appendChild(touchDragEl);
+                    }
+                    touchDragEl = null;
+                    origParent = null;
+                    origNext = null;
+                    // Do not check order automatically
+                }, {passive: false});
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             // Randomize correct order
             correctOrder = shuffle(colorIds.slice());
@@ -447,6 +531,7 @@
             showHint();
             resetTimer();
             startTimer();
+            enableTouchDnD();
         });
     </script>
 </body>
