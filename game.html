@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game - DrMaja's Website</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Game-specific styles */
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 2rem;
+        }
+        .drop-row {
+            display: flex;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .drop-zone {
+            width: 70px;
+            height: 70px;
+            border: 4px solid #222;
+            border-radius: 10px;
+            background: #f7f9fa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: 0 0.5rem;
+        }
+        .drag-row {
+            display: flex;
+            gap: 2rem;
+        }
+        .draggable-square {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            cursor: grab;
+            border: 2px solid #222;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            user-select: none;
+        }
+        .draggable-square.red { background: #e25555; }
+        .draggable-square.yellow { background: #ffe066; }
+        .draggable-square.blue { background: #4a90e2; }
+        .draggable-square.green { background: #4caf50; }
+        .draggable-square.orange { display: none; }
+        .dragging {
+            opacity: 0.6;
+        }
+        .order-hint {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            font-weight: bold;
+            letter-spacing: 0.1em;
+        }
+        .order-color {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            margin: 0 4px;
+            vertical-align: middle;
+            border: 2px solid #222;
+        }
+        .order-color.blue { background: #4a90e2; }
+        .order-color.red { background: #e25555; }
+        .order-color.yellow { background: #ffe066; }
+        .order-color.green { background: #4caf50; }
+        .order-color.orange { display: none; }
+        .hint-row {
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+            flex-wrap: nowrap;
+        }
+        .hint-row .hint-title {
+            white-space: nowrap;
+        }
+        .hint-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        .hint-pair {
+            display: flex;
+            align-items: center;
+            margin-right: 0;
+        }
+        .hint-color {
+            display: inline-block;
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            border: 2px solid #222;
+            margin-right: 2px;
+        }
+        .hint-color.blue { background: #4a90e2; }
+        .hint-color.red { background: #e25555; }
+        .hint-color.yellow { background: #ffe066; }
+        .hint-color.green { background: #4caf50; }
+        .hint-color.orange { display: none; }
+        .highlight-pair {
+            outline: 3px solid #e25555;
+            outline-offset: 2px;
+            border-radius: 8px;
+            background: #ffd6d6;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Deduce the correct order of the blocks to win the game!
+        </h1>
+    </header>
+    <main>
+        <div class="game-container">
+            <div class="hint-row" id="hint-row"></div>
+            <div class="drop-row">
+                <div class="drop-zone" id="drop-0" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+                <div class="drop-zone" id="drop-1" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+                <div class="drop-zone" id="drop-2" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+                <div class="drop-zone" id="drop-3" ondragover="allowDrop(event)" ondrop="drop(event)"></div>
+            </div>
+            <div class="drag-row" id="drag-row"
+                ondragover="allowDrop(event)"
+                ondrop="dropToDragRow(event)">
+                <div class="draggable-square blue" id="blue" draggable="true" ondragstart="drag(event)"></div>
+                <div class="draggable-square red" id="red" draggable="true" ondragstart="drag(event)"></div>
+                <div class="draggable-square yellow" id="yellow" draggable="true" ondragstart="drag(event)"></div>
+                <div class="draggable-square green" id="green" draggable="true" ondragstart="drag(event)"></div>
+                <!-- <div class="draggable-square orange" id="orange" draggable="true" ondragstart="drag(event)"></div> -->
+            </div>
+        </div>
+        <button class="heart-btn" onclick="location.href='index.html'">Back to Home</button>
+        <button class="heart-btn" onclick="resetGame()">Reset Game</button>
+    </main>
+    <footer>
+        <p>&copy; 2025 DrMaja. All rights reserved.</p>
+    </footer>
+    <script>
+        // Drag and drop logic
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+        // Track the currently dragged element
+        let currentlyDraggedId = null;
+
+        function drag(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+            currentlyDraggedId = ev.target.id;
+            setTimeout(() => {
+                ev.target.classList.add('dragging');
+            }, 0);
+        }
+        function drop(ev) {
+            ev.preventDefault();
+            const data = ev.dataTransfer.getData("text");
+            const dragged = document.getElementById(data);
+            // Only allow one square per drop zone
+            if (ev.target.classList.contains('drop-zone') && ev.target.children.length === 0) {
+                ev.target.appendChild(dragged);
+                dragged.classList.remove('dragging');
+                checkWin();
+            }
+        }
+
+        function dropToDragRow(ev) {
+            ev.preventDefault();
+            const data = ev.dataTransfer.getData("text");
+            const dragged = document.getElementById(data);
+            const dragRow = document.getElementById('drag-row');
+            if (dragged && !dragRow.contains(dragged)) {
+                dragRow.appendChild(dragged);
+                dragged.classList.remove('dragging');
+                checkWin();
+            }
+            currentlyDraggedId = null;
+        }
+
+        // Allow dragging squares back to the drag-row
+        document.querySelectorAll('.draggable-square').forEach(sq => {
+            sq.ondragend = function() {
+                this.classList.remove('dragging');
+            };
+        });
+        // Make drag-row a drop target to return squares
+        document.addEventListener('DOMContentLoaded', function() {
+            const dragRow = document.querySelector('.drag-row');
+            dragRow.ondragover = allowDrop;
+            dragRow.ondrop = function(ev) {
+                ev.preventDefault();
+                const data = ev.dataTransfer.getData("text");
+                const dragged = document.getElementById(data);
+                if (!dragRow.contains(dragged)) {
+                    dragRow.appendChild(dragged);
+                    dragged.classList.remove('dragging');
+                    checkWin();
+                }
+            };
+
+            // Add a drop handler to the document body to catch drops outside valid zones
+            document.body.addEventListener('dragover', function(ev) {
+                ev.preventDefault();
+            });
+            document.body.addEventListener('drop', function(ev) {
+                // Only handle if not dropped on a drop-zone or drag-row
+                if (
+                    !ev.target.classList.contains('drop-zone') &&
+                    !ev.target.classList.contains('drag-row') &&
+                    currentlyDraggedId
+                ) {
+                    const dragRow = document.getElementById('drag-row');
+                    const dragged = document.getElementById(currentlyDraggedId);
+                    if (dragged && !dragRow.contains(dragged)) {
+                        dragRow.appendChild(dragged);
+                        dragged.classList.remove('dragging');
+                        checkWin();
+                    }
+                    currentlyDraggedId = null;
+                }
+            });
+        });
+
+        // Store the correct order globally
+        let correctOrder = [];
+
+        // All possible color ids
+        const colorIds = ['blue', 'red', 'yellow', 'green'];
+
+        // Utility to shuffle an array
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        // Find the minimal set of invalid pairs so that only the correct order is possible
+        function getMinimalInvalidPairs(order) {
+            // All possible pairs (excluding self-pairs)
+            let allPairs = [];
+            for (let i = 0; i < colorIds.length; i++) {
+                for (let j = 0; j < colorIds.length; j++) {
+                    if (i !== j) allPairs.push([colorIds[i], colorIds[j]]);
+                }
+            }
+            // Valid pairs in the correct order
+            let validPairs = new Set();
+            for (let i = 0; i < order.length - 1; i++) {
+                validPairs.add(order[i] + '-' + order[i+1]);
+            }
+            // The minimal set of invalid pairs is all pairs except the valid ones
+            let minimalInvalidPairs = allPairs.filter(pair => !validPairs.has(pair[0] + '-' + pair[1]));
+            return minimalInvalidPairs;
+        }
+
+        // Store last guess to highlight invalid pairs in hint
+        let lastInvalidPairsInGuess = [];
+
+        function showHint() {
+            const hintRow = document.getElementById('hint-row');
+            const pairs = getMinimalInvalidPairs(correctOrder);
+
+            // Highlight pairs that are present as adjacent pairs in the user's last guess
+            let highlightPairs = new Set(
+                (lastInvalidPairsInGuess || []).map(pair => pair[0] + '-' + pair[1])
+            );
+
+            // Split pairs into 4 columns as equally as possible
+            const colCount = 4;
+            const perCol = Math.ceil(pairs.length / colCount);
+            let columns = Array.from({length: colCount}, () => []);
+            pairs.forEach((pair, idx) => {
+                columns[idx % colCount].push(pair);
+            });
+
+            hintRow.innerHTML =
+                `<span class="hint-title">Hint: The following pairs <b>never</b> appear next to each other:</span>`
+                + `<div style="display: flex; gap: 2.5rem;">`
+                + columns.map(colPairs =>
+                    `<div class="hint-list">` +
+                    colPairs.map(pair => {
+                        const key = pair[0] + '-' + pair[1];
+                        const highlight = highlightPairs.has(key) ? ' highlight-pair' : '';
+                        return `<span class="hint-pair${highlight}"><span class="hint-color ${pair[0]}"></span><span class="hint-color ${pair[1]}"></span></span>`;
+                    }).join('') +
+                    `</div>`
+                ).join('') +
+                `</div>`;
+        }
+
+        function highlightInvalidPairs(order) {
+            const minimalInvalidPairs = getMinimalInvalidPairs(correctOrder);
+
+            // Find all adjacent pairs in the user's guess that are invalid
+            let foundInvalid = [];
+            for (let i = 0; i < order.length - 1; i++) {
+                if (order[i] && order[i+1]) {
+                    let pair = [order[i], order[i+1]];
+                    if (minimalInvalidPairs.some(p => p[0] === pair[0] && p[1] === pair[1])) {
+                        foundInvalid.push(pair);
+                    }
+                }
+            }
+            lastInvalidPairsInGuess = foundInvalid;
+            showHint();
+        }
+
+        function resetBlocks(incorrectIndexes = [0,1,2,3]) {
+            const dragRow = document.querySelector('.drag-row');
+            incorrectIndexes.forEach(i => {
+                const dz = document.getElementById('drop-' + i);
+                if (dz && dz.children.length > 0) {
+                    dragRow.appendChild(dz.children[0]);
+                }
+            });
+        }
+
+        function checkWin() {
+            const order = [];
+            for (let i = 0; i < 4; i++) {
+                const dz = document.getElementById('drop-' + i);
+                if (dz.children.length > 0) {
+                    order.push(dz.children[0].id);
+                } else {
+                    order.push(null);
+                }
+            }
+            // Only check if all drop zones are filled
+            if (order.every(x => x !== null)) {
+                let correct = true;
+                let incorrectIndexes = [];
+                for (let i = 0; i < 4; i++) {
+                    if (order[i] !== correctOrder[i]) {
+                        correct = false;
+                        incorrectIndexes.push(i);
+                    }
+                }
+                if (correct) {
+                    setTimeout(() => {
+                        lastInvalidPairsInGuess = [];
+                        showHint();
+                        alert('You win!');
+                    }, 100);
+                } else {
+                    highlightInvalidPairs(order);
+                    setTimeout(() => {
+                        alert('Try again!');
+                        resetBlocks(incorrectIndexes);
+                    }, 100);
+                }
+            } else {
+                // Clear highlights if not all filled
+                lastInvalidPairsInGuess = [];
+                showHint();
+            }
+        }
+
+        function resetGame() {
+            // Reshuffle correct order
+            correctOrder = shuffle(colorIds.slice());
+            // Move all blocks back to drag row
+            const dragRow = document.querySelector('.drag-row');
+            colorIds.forEach(id => {
+                const el = document.getElementById(id);
+                if (el && !dragRow.contains(el)) {
+                    dragRow.appendChild(el);
+                }
+            });
+            lastInvalidPairsInGuess = [];
+            showHint();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Randomize correct order
+            correctOrder = shuffle(colorIds.slice());
+            const dragRow = document.querySelector('.drag-row');
+            dragRow.ondragover = allowDrop;
+            dragRow.ondrop = function(ev) {
+                ev.preventDefault();
+                const data = ev.dataTransfer.getData("text");
+                const dragged = document.getElementById(data);
+                if (!dragRow.contains(dragged)) {
+                    dragRow.appendChild(dragged);
+                    dragged.classList.remove('dragging');
+                    checkWin();
+                }
+            };
+            lastInvalidPairsInGuess = [];
+            showHint();
+        });
+    </script>
+</body>
+</html>
+</html>
