@@ -85,7 +85,8 @@
     </header>
     <main>
         <div id="bracelet-order-row" class="bracelet-order-row"></div>
-        <div id="invalid-pairs-row" style="display:flex; justify-content:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.2rem;"></div>
+        <div id="invalid-pairs-row" style="display:flex; justify-content:center; flex-wrap:wrap; gap:2rem; margin-bottom:1.2rem;"></div>
+        <div id="invalid-triple-row" style="display:flex; justify-content:center; flex-wrap:wrap; gap:3rem; margin-bottom:2rem;"></div>
         <div class="bracelet-container">
             <div class="bracelet-outline"></div>
             <div class="bead bead-0 bracelet-target" id="bracelet-0" ondragover="beadOver(event)" ondragleave="beadLeave(event)" ondrop="beadDrop(event)"></div>
@@ -97,7 +98,7 @@
             <div class="bead bead-6 bracelet-target" id="bracelet-6" ondragover="beadOver(event)" ondragleave="beadLeave(event)" ondrop="beadDrop(event)"></div>
             <div class="bead bead-7 bracelet-target" id="bracelet-7" ondragover="beadOver(event)" ondragleave="beadLeave(event)" ondrop="beadDrop(event)"></div>
         </div>
-        <div id="bead-row" style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 2.5rem;height: 20rem;">
+        <div id="bead-row" style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 2.5rem; height: 20rem;">
             <div class="bead draggable-source" id="red-1" style="background:#e25555;" draggable="true" ondragstart="beadDragStart(event)"></div>
             <div class="bead draggable-source" id="red-2" style="background:#e25555;" draggable="true" ondragstart="beadDragStart(event)"></div>
             <div class="bead draggable-source" id="red-3" style="background:#e25555;" draggable="true" ondragstart="beadDragStart(event)"></div>
@@ -107,6 +108,7 @@
             <div class="bead draggable-source" id="blue-1" style="background:#4a90e2;" draggable="true" ondragstart="beadDragStart(event)"></div>
             <div class="bead draggable-source" id="blue-2" style="background:#4a90e2;" draggable="true" ondragstart="beadDragStart(event)"></div>
         </div>
+       
         <button class="heart-btn" onclick="location.href='index.html'">Back to Home</button>
         <button class="heart-btn" onclick="checkBraceletOrder()">Check Bracelet</button>
         <button class="heart-btn" onclick="resetBracelet()">Reset Bracelet</button>
@@ -306,6 +308,54 @@
                 ).join('');
         }
 
+        
+
+           // Show all triple of 3 beads which do not occur next to each other in the target order
+        function showInvalidTriple() {
+            const colorList = ["red", "yellow", "blue"];
+            let allBeads = [];
+            correctOrder.forEach(c => allBeads.push(c));
+            // All possible pairs (excluding self-pairs)
+            let allTriple = [];
+            for (let i = 0; i < allBeads.length; i++) {
+                for (let j = 0; j < allBeads.length; j++) {
+                    for (let k = 0; k < allBeads.length; k++) {
+                        if (i !== j && j !== k && i !== k) allTriple.push([allBeads[i], allBeads[j], allBeads[k]]);
+                    }
+            
+                }
+            }
+            // Valid Triples in the target order (adjacent)
+            let validTriple = new Set();
+            for (let i = 0; i < correctOrder.length - 1; i++) {
+                validTriple.add(correctOrder[i] + '-' + correctOrder[i+1]+'-'+correctOrder[i+2]);
+                validTriple.add(correctOrder[correctOrder.length-1] + '-' + correctOrder[0]+ '-'+correctOrder[1]);
+                validTriple.add(correctOrder[correctOrder.length-2] + '-' + correctOrder[correctOrder.length-1]+ '-'+correctOrder[0]);
+                
+            }
+            // Remove duplicate Triples
+            let minimalInvalidTriple = [];
+            let seen = new Set();
+            allTriple.forEach(triple => {
+                const key = triple[0] + '-' + triple[1] + '-' + triple[2];
+                if (!validTriple.has(key) && !seen.has(key)) {
+                    minimalInvalidTriple.push(triple);
+                    seen.add(key);
+                }
+            });
+
+            // Render invalid triples
+            const row = document.getElementById('invalid-triple-row');
+            row.innerHTML = `<span style="margin-right:0.5em;"> triples not adjacent in target order:</span>` +
+                minimalInvalidTriple.map(triple =>
+                    `<span style="display:inline-flex;align-items:center;">
+                        <span class="bracelet-order-bead ${triple[0]}"></span>
+                        <span class="bracelet-order-bead ${triple[1]}"></span>
+                        <span class="bracelet-order-bead ${triple[2]}"></span>
+                    </span>`
+                ).join('');
+        }
+ 
         // Generate a random bracelet order with 3 red, 3 yellow, 2 blue beads
         let correctOrder = [];
         function generateRandomOrder() {
@@ -324,11 +374,12 @@
 
         function showBraceletOrder() {
             const row = document.getElementById('bracelet-order-row');
-            row.innerHTML = `<span>Target order:</span>` +
+            /* row.innerHTML = `<span>Target order:</span>` +
                 correctOrder.map(color =>
                     `<span class="bracelet-order-bead ${color}"></span>`
-                ).join('');
-            showInvalidPairs();
+                ).join(''); */
+            //showInvalidPairs();
+            showInvalidTriple();
         }
 
         document.addEventListener('DOMContentLoaded', function() {
