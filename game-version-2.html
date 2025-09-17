@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Version 2 - DrMaja's Website</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .bracelet-container {
+            position: relative;
+            width: 300px;
+            height: 300px;
+            margin: 2rem auto;
+        }
+        .bead {
+            position: absolute;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            border: 3px solid #222;
+            background: #fff;
+            box-sizing: border-box;
+            transition: box-shadow 0.2s;
+        }
+        /* Position beads in a circle */
+        /* 8 beads, angle step = 360/8 = 45deg */
+        /* Center of bracelet: (150,150), radius: 110px */
+        /* Calculate positions for each bead */
+        .bead.bead-0 { left: 150px; top: 40px; transform: translate(-50%, -50%);}
+        .bead.bead-1 { left: 225px; top: 75px; transform: translate(-50%, -50%);}
+        .bead.bead-2 { left: 260px; top: 150px; transform: translate(-50%, -50%);}
+        .bead.bead-3 { left: 225px; top: 230px; transform: translate(-50%, -50%);}
+        .bead.bead-4 { left: 150px; top: 260px; transform: translate(-50%, -50%);}
+        .bead.bead-5 { left: 75px; top: 230px; transform: translate(-50%, -50%);}
+        .bead.bead-6 { left: 40px; top: 150px; transform: translate(-50%, -50%);}
+        .bead.bead-7 { left: 75px; top: 75px; transform: translate(-50%, -50%);}
+        /* Optional: bracelet outline */
+        .bracelet-outline {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 220px;
+            height: 220px;
+            border-radius: 50%;
+            border: 2px dashed #222;
+            transform: translate(-50%, -50%);
+            pointer-events: none;
+        }
+        .bead.draggable-source {
+            position: static;
+            cursor: grab;
+        }
+        .bead.bracelet-target {
+            background: #fff;
+            width: 57px;
+            height: 57px;
+        }
+        .bead.over {
+            box-shadow: 0 0 0 4px #4a90e244;
+        }
+        .bracelet-order-row {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1.2rem;
+            font-size: 1.1rem;
+            align-items: center;
+        }
+        .bracelet-order-bead {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            border: 2px solid #222;
+            display: inline-block;
+            margin: 0 2px;
+        }
+        .bracelet-order-bead.red { background: #e25555; }
+        .bracelet-order-bead.yellow { background: #ffe066; }
+        .bracelet-order-bead.blue { background: #4a90e2; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Game Version 2</h1>
+    </header>
+    <main>
+        <div id="bracelet-order-row" class="bracelet-order-row"></div>
+        <div id="invalid-pairs-row" style="display:flex; justify-content:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1.2rem;"></div>
+        <div class="bracelet-container">
+            <div class="bracelet-outline"></div>
+            <div class="bead bead-0 bracelet-target" id="bracelet-0" ondragover="beadOver(event)" ondragleave="beadLeave(event)" ondrop="beadDrop(event)"></div>
+            <div class="bead bead-1 bracelet-target" id="bracelet-1" ondragover="beadOver(event)" ondragleave="beadLeave(event)" ondrop="beadDrop(event)"></div>
+            <div class="bead bead-2 bracelet-target" id="bracelet-2" ondragover="beadOver(event)" ondragleave="beadLeave(event)" ondrop="beadDrop(event)"></div>
+            <div class="bead bead-3 bracelet-target" id="bracelet-3" ondragover="beadOver(event)" ondragleave="beadLeave(event)" ondrop="beadDrop(event)"></div>
+            <div class="bead bead-4 bracelet-target" id="bracelet-4" ondragover="beadOver(event)" ondragleave="beadLeave(event)" ondrop="beadDrop(event)"></div>
+            <div class="bead bead-5 bracelet-target" id="bracelet-5" ondragover="beadOver(event)" ondragleave="beadLeave(event)" ondrop="beadDrop(event)"></div>
+            <div class="bead bead-6 bracelet-target" id="bracelet-6" ondragover="beadOver(event)" ondragleave="beadLeave(event)" ondrop="beadDrop(event)"></div>
+            <div class="bead bead-7 bracelet-target" id="bracelet-7" ondragover="beadOver(event)" ondragleave="beadLeave(event)" ondrop="beadDrop(event)"></div>
+        </div>
+        <div id="bead-row" style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 2.5rem;height: 20rem;">
+            <div class="bead draggable-source" id="red-1" style="background:#e25555;" draggable="true" ondragstart="beadDragStart(event)"></div>
+            <div class="bead draggable-source" id="red-2" style="background:#e25555;" draggable="true" ondragstart="beadDragStart(event)"></div>
+            <div class="bead draggable-source" id="red-3" style="background:#e25555;" draggable="true" ondragstart="beadDragStart(event)"></div>
+            <div class="bead draggable-source" id="yellow-1" style="background:#ffe066;" draggable="true" ondragstart="beadDragStart(event)"></div>
+            <div class="bead draggable-source" id="yellow-2" style="background:#ffe066;" draggable="true" ondragstart="beadDragStart(event)"></div>
+            <div class="bead draggable-source" id="yellow-3" style="background:#ffe066;" draggable="true" ondragstart="beadDragStart(event)"></div>
+            <div class="bead draggable-source" id="blue-1" style="background:#4a90e2;" draggable="true" ondragstart="beadDragStart(event)"></div>
+            <div class="bead draggable-source" id="blue-2" style="background:#4a90e2;" draggable="true" ondragstart="beadDragStart(event)"></div>
+        </div>
+        <button class="heart-btn" onclick="location.href='index.html'">Back to Home</button>
+        <button class="heart-btn" onclick="checkBraceletOrder()">Check Bracelet</button>
+        <button class="heart-btn" onclick="resetBracelet()">Reset Bracelet</button>
+    </main>
+    <footer>
+        <p>&copy; 2025 DrMaja. All rights reserved.</p>
+    </footer>
+    <script>
+        // Drag and drop for beads (mouse)
+        function beadDragStart(ev) {
+            ev.dataTransfer.setData("text", ev.target.id);
+        }
+        function beadOver(ev) {
+            ev.preventDefault();
+            ev.currentTarget.classList.add('over');
+        }
+        function beadLeave(ev) {
+            ev.currentTarget.classList.remove('over');
+        }
+        function beadDrop(ev) {
+            ev.preventDefault();
+            ev.currentTarget.classList.remove('over');
+            if (ev.currentTarget.children.length === 0) {
+                const beadId = ev.dataTransfer.getData("text");
+                const bead = document.getElementById(beadId);
+                if (bead) {
+                    ev.currentTarget.appendChild(bead);
+                    bead.style.position = "absolute";
+                    bead.style.left = "50%";
+                    bead.style.top = "50%";
+                    bead.style.transform = "translate(-50%, -50%)";
+                }
+            }
+        }
+
+        // Allow beads to be dragged back to bead-row
+        document.getElementById('bead-row').ondragover = function(ev) { ev.preventDefault(); };
+        document.getElementById('bead-row').ondrop = function(ev) {
+            ev.preventDefault();
+            const beadId = ev.dataTransfer.getData("text");
+            const bead = document.getElementById(beadId);
+            if (bead && bead.parentElement !== this) {
+                this.appendChild(bead);
+                bead.style.position = "static";
+                bead.style.left = "";
+                bead.style.top = "";
+                bead.style.transform = "";
+            }
+        };
+
+        // Touch support for mobile
+        function enableTouchBeadDnD() {
+            let touchDragEl = null;
+            let origParent = null;
+            let origNext = null;
+            let currentTargetBead = null;
+
+            function getDropTarget(touch) {
+                const el = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (!el) return null;
+                if (el.classList.contains('bracelet-target')) return el;
+                if (el.classList.contains('draggable-source')) return document.getElementById('bead-row');
+                if (el.parentElement && el.parentElement.classList.contains('bracelet-target')) return el.parentElement;
+                if (el.parentElement && el.parentElement.id === 'bead-row') return document.getElementById('bead-row');
+                return null;
+            }
+
+            document.querySelectorAll('.draggable-source').forEach(el => {
+                el.addEventListener('touchstart', function(e) {
+                    if (e.touches.length > 1) return;
+                    touchDragEl = el;
+                    origParent = el.parentElement;
+                    origNext = el.nextElementSibling;
+                    currentTargetBead = (origParent && origParent.classList.contains('bracelet-target')) ? origParent : null;
+                    el.classList.add('dragging-touch');
+                    el.style.width = getComputedStyle(el).width;
+                    el.style.height = getComputedStyle(el).height;
+                    el.style.left = (e.touches[0].clientX - el.offsetWidth / 2) + 'px';
+                    el.style.top = (e.touches[0].clientY - el.offsetHeight / 2) + 'px';
+                    document.body.appendChild(el);
+                    document.body.style.touchAction = 'none';
+                    e.preventDefault();
+                }, {passive: false});
+
+                el.addEventListener('touchmove', function(e) {
+                    if (!touchDragEl) return;
+                    const touch = e.touches[0];
+                    touchDragEl.style.left = (touch.clientX - touchDragEl.offsetWidth / 2) + 'px';
+                    touchDragEl.style.top = (touch.clientY - touchDragEl.offsetHeight / 2) + 'px';
+
+                    // If bead was picked up from a bracelet target, check if center is still inside
+                    if (currentTargetBead) {
+                        const rect = currentTargetBead.getBoundingClientRect();
+                        if (
+                            touch.clientX < rect.left ||
+                            touch.clientX > rect.right ||
+                            touch.clientY < rect.top ||
+                            touch.clientY > rect.bottom
+                        ) {
+                            // Center has left the target bead, return to bead-row immediately
+                            document.getElementById('bead-row').appendChild(touchDragEl);
+                            touchDragEl.style.position = "static";
+                            touchDragEl.style.left = "";
+                            touchDragEl.style.top = "";
+                            touchDragEl.style.transform = "";
+                            touchDragEl.classList.remove('dragging-touch');
+                            document.body.style.touchAction = '';
+                            touchDragEl = null;
+                            origParent = null;
+                            origNext = null;
+                            currentTargetBead = null;
+                            e.preventDefault();
+                            return;
+                        }
+                    }
+                    e.preventDefault();
+                }, {passive: false});
+
+                el.addEventListener('touchend', function(e) {
+                    if (!touchDragEl) return;
+                    let dropTarget = getDropTarget(e.changedTouches[0]);
+                    touchDragEl.classList.remove('dragging-touch');
+                    touchDragEl.style.position = '';
+                    touchDragEl.style.left = '';
+                    touchDragEl.style.top = '';
+                    touchDragEl.style.width = '';
+                    touchDragEl.style.height = '';
+                    touchDragEl.style.zIndex = '';
+                    touchDragEl.style.pointerEvents = '';
+                    document.body.style.touchAction = '';
+
+                    if (dropTarget && dropTarget.classList.contains('bracelet-target') && dropTarget.children.length === 0) {
+                        dropTarget.appendChild(touchDragEl);
+                        touchDragEl.style.position = "absolute";
+                        touchDragEl.style.left = "50%";
+                        touchDragEl.style.top = "50%";
+                        touchDragEl.style.transform = "translate(-50%, -50%)";
+                    } else if (dropTarget && dropTarget.id === 'bead-row') {
+                        dropTarget.appendChild(touchDragEl);
+                        touchDragEl.style.position = "static";
+                        touchDragEl.style.left = "";
+                        touchDragEl.style.top = "";
+                        touchDragEl.style.transform = "";
+                    } else {
+                        document.getElementById('bead-row').appendChild(touchDragEl);
+                        touchDragEl.style.position = "static";
+                        touchDragEl.style.left = "";
+                        touchDragEl.style.top = "";
+                        touchDragEl.style.transform = "";
+                    }
+                    touchDragEl = null;
+                    origParent = null;
+                    origNext = null;
+                    currentTargetBead = null;
+                }, {passive: false});
+            });
+        }
+
+        // Show all pairs of 2 beads which do not occur next to each other in the target order
+        function showInvalidPairs() {
+            const colorList = ["red", "yellow", "blue"];
+            let allBeads = [];
+            correctOrder.forEach(c => allBeads.push(c));
+            // All possible pairs (excluding self-pairs)
+            let allPairs = [];
+            for (let i = 0; i < allBeads.length; i++) {
+                for (let j = 0; j < allBeads.length; j++) {
+                    if (i !== j) allPairs.push([allBeads[i], allBeads[j]]);
+                }
+            }
+            // Valid pairs in the target order (adjacent)
+            let validPairs = new Set();
+            for (let i = 0; i < correctOrder.length - 1; i++) {
+                validPairs.add(correctOrder[i] + '-' + correctOrder[i+1]);
+                 validPairs.add(correctOrder[correctOrder.length-1] + '-' + correctOrder[0]);
+                
+            }
+            // Remove duplicate pairs
+            let minimalInvalidPairs = [];
+            let seen = new Set();
+            allPairs.forEach(pair => {
+                const key = pair[0] + '-' + pair[1];
+                if (!validPairs.has(key) && !seen.has(key)) {
+                    minimalInvalidPairs.push(pair);
+                    seen.add(key);
+                }
+            });
+
+            // Render invalid pairs
+            const row = document.getElementById('invalid-pairs-row');
+            row.innerHTML = `<span style="margin-right:0.5em;">Pairs not adjacent in target order:</span>` +
+                minimalInvalidPairs.map(pair =>
+                    `<span style="display:inline-flex;align-items:center;">
+                        <span class="bracelet-order-bead ${pair[0]}"></span>
+                        <span class="bracelet-order-bead ${pair[1]}"></span>
+                    </span>`
+                ).join('');
+        }
+
+        // Generate a random bracelet order with 3 red, 3 yellow, 2 blue beads
+        let correctOrder = [];
+        function generateRandomOrder() {
+            let beads = [
+                "red", "red", "red",
+                "yellow", "yellow", "yellow",
+                "blue", "blue"
+            ];
+            // Fisher-Yates shuffle
+            for (let i = beads.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [beads[i], beads[j]] = [beads[j], beads[i]];
+            }
+            correctOrder = beads;
+        }
+
+        function showBraceletOrder() {
+            const row = document.getElementById('bracelet-order-row');
+            row.innerHTML = `<span>Target order:</span>` +
+                correctOrder.map(color =>
+                    `<span class="bracelet-order-bead ${color}"></span>`
+                ).join('');
+            showInvalidPairs();
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            generateRandomOrder();
+            showBraceletOrder();
+            enableTouchBeadDnD();
+        });
+
+        function getBraceletOrder() {
+            // Returns array of color names in bracelet order
+            const colorMap = {
+                "#e25555": "red",
+                "#ffe066": "yellow",
+                "#4a90e2": "blue"
+            };
+            let order = [];
+            for (let i = 0; i < 8; i++) {
+                const beadSlot = document.getElementById('bracelet-' + i);
+                if (beadSlot.children.length > 0) {
+                    const bead = beadSlot.children[0];
+                    // Get background color and map to color name
+                    let bg = bead.style.background;
+                    // Normalize color string
+                    if (bg.startsWith("rgb")) {
+                        // Convert rgb to hex
+                        let rgb = bg.match(/\d+/g);
+                        if (rgb) {
+                            bg = "#" + rgb.map(x => ("0" + parseInt(x).toString(16)).slice(-2)).join('');
+                        }
+                    }
+                    order.push(colorMap[bg] || "");
+                } else {
+                    order.push("");
+                }
+            }
+            return order;
+        }
+
+        function isRotationalEquivalent(arr, target) {
+            // Check if arr is a rotation of target
+            if (arr.length !== target.length) return false;
+            const doubled = arr.concat(arr);
+            for (let i = 0; i < arr.length; i++) {
+                let match = true;
+                for (let j = 0; j < arr.length; j++) {
+                    if (doubled[i + j] !== target[j]) {
+                        match = false;
+                        break;
+                    }
+                }
+                if (match) return true;
+            }
+            return false;
+        }
+
+        function resetBracelet() {
+            const beadRow = document.getElementById('bead-row');
+            // Remove all beads from bracelet and append to beadRow in original order
+            const beadIds = [
+                "red-1", "red-2", "red-3",
+                "yellow-1", "yellow-2", "yellow-3",
+                "blue-1", "blue-2"
+            ];
+            beadIds.forEach(id => {
+                const bead = document.getElementById(id);
+                if (bead && bead.parentElement !== beadRow) {
+                    beadRow.appendChild(bead);
+                    bead.style.position = "static";
+                    bead.style.left = "";
+                    bead.style.top = "";
+                    bead.style.transform = "";
+                }
+            });
+        }
+
+        function checkBraceletOrder() {
+            const currentOrder = getBraceletOrder();
+            if (isRotationalEquivalent(currentOrder, correctOrder)) {
+                alert("You win!");
+            } else {
+                alert("Try again.");
+                resetBracelet();
+            }
+        }
+    </script>
+</body>
+</html>
