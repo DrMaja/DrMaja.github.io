@@ -310,8 +310,7 @@
 
         
 
-           // Show all triple of 3 beads which do not occur next to each other in the target order
-        function showInvalidTriple() {
+        function getInvalidTriples() {
             const colorList = ["red", "yellow", "blue"];
             let allBeads = [];
             correctOrder.forEach(c => allBeads.push(c));
@@ -344,6 +343,14 @@
                 }
             });
 
+            return minimalInvalidTriple;            
+        }
+        
+
+        // Show all triple of 3 beads which do not occur next to each other in the target order
+        function showInvalidTriple() {
+            const minimalInvalidTriple = getInvalidTriples();
+
             // Render invalid triples
             const row = document.getElementById('invalid-triple-row');
             row.innerHTML = `<span style="margin-right:0.5em;"> triples not adjacent in target order:</span>` +
@@ -358,6 +365,7 @@
  
         // Generate a random bracelet order with 3 red, 3 yellow, 2 blue beads
         let correctOrder = [];
+        let invalidTriples = [];
         function generateRandomOrder() {
             let beads = [
                 "red", "red", "red",
@@ -370,6 +378,7 @@
                 [beads[i], beads[j]] = [beads[j], beads[i]];
             }
             correctOrder = beads;
+            invalidTriples = getInvalidTriples();
         }
 
         function showBraceletOrder() {
