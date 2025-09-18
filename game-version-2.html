@@ -427,6 +427,12 @@
             return order;
         }
 
+        function getSubmittedInvalidTriples(arr) {
+            const targetString = arr.concat(arr).join();
+            
+            return invalidTriples.filter(triple => targetString.includes(triple.join()))
+        }
+
         function isRotationalEquivalent(arr, target) {
             // Check if arr is a rotation of target
             if (arr.length !== target.length) return false;
