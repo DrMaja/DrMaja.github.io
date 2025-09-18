@@ -77,6 +77,11 @@
         .bracelet-order-bead.red { background: #e25555; }
         .bracelet-order-bead.yellow { background: #ffe066; }
         .bracelet-order-bead.blue { background: #4a90e2; }
+
+        .highlighted-triple {
+            outline: 2px solid red;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -354,8 +359,8 @@
             // Render invalid triples
             const row = document.getElementById('invalid-triple-row');
             row.innerHTML = `<span style="margin-right:0.5em;"> triples not adjacent in target order:</span>` +
-                minimalInvalidTriple.map(triple =>
-                    `<span style="display:inline-flex;align-items:center;">
+                minimalInvalidTriple.map((triple, index) =>
+                    `<span style="display:inline-flex;align-items:center;padding:2px;" data-index=${index}>
                         <span class="bracelet-order-bead ${triple[0]}"></span>
                         <span class="bracelet-order-bead ${triple[1]}"></span>
                         <span class="bracelet-order-bead ${triple[2]}"></span>
@@ -471,12 +476,18 @@
         }
 
         function checkBraceletOrder() {
+            [...document.querySelectorAll(`.highlighted-triple`)].forEach(element => element.classList.remove('highlighted-triple'));
+
             const currentOrder = getBraceletOrder();
             if (isRotationalEquivalent(currentOrder, correctOrder)) {
                 alert("You win!");
             } else {
                 alert("Try again.");
-                resetBracelet();
+                
+                const submittedInvalidTriples = getSubmittedInvalidTriples(currentOrder);
+                for (const triple of submittedInvalidTriples) {
+                    document.querySelector(`span[data-index="${invalidTriples.indexOf(triple)}"]`).classList.add('highlighted-triple')
+                }
             }
         }
     </script>
