@@ -77,6 +77,11 @@
         .bracelet-order-bead.red { background: #e25555; }
         .bracelet-order-bead.yellow { background: #ffe066; }
         .bracelet-order-bead.blue { background: #4a90e2; }
+
+        .highlighted-triple {
+            outline: 2px solid red;
+            border-radius: 5px;
+        }
     </style>
 </head>
 <body>
@@ -310,8 +315,7 @@
 
         
 
-           // Show all triple of 3 beads which do not occur next to each other in the target order
-        function showInvalidTriple() {
+        function getInvalidTriples() {
             const colorList = ["red", "yellow", "blue"];
             let allBeads = [];
             correctOrder.forEach(c => allBeads.push(c));
@@ -344,11 +348,19 @@
                 }
             });
 
+            return minimalInvalidTriple;            
+        }
+        
+
+        // Show all triple of 3 beads which do not occur next to each other in the target order
+        function showInvalidTriple() {
+            const minimalInvalidTriple = getInvalidTriples();
+
             // Render invalid triples
             const row = document.getElementById('invalid-triple-row');
             row.innerHTML = `<span style="margin-right:0.5em;"> triples not adjacent in target order:</span>` +
-                minimalInvalidTriple.map(triple =>
-                    `<span style="display:inline-flex;align-items:center;">
+                minimalInvalidTriple.map((triple, index) =>
+                    `<span style="display:inline-flex;align-items:center;padding:2px;" data-index=${index}>
                         <span class="bracelet-order-bead ${triple[0]}"></span>
                         <span class="bracelet-order-bead ${triple[1]}"></span>
                         <span class="bracelet-order-bead ${triple[2]}"></span>
@@ -358,6 +370,7 @@
  
         // Generate a random bracelet order with 3 red, 3 yellow, 2 blue beads
         let correctOrder = [];
+        let invalidTriples = [];
         function generateRandomOrder() {
             let beads = [
                 "red", "red", "red",
@@ -370,6 +383,7 @@
                 [beads[i], beads[j]] = [beads[j], beads[i]];
             }
             correctOrder = beads;
+            invalidTriples = getInvalidTriples();
         }
 
         function showBraceletOrder() {
@@ -418,6 +432,12 @@
             return order;
         }
 
+        function getSubmittedInvalidTriples(arr) {
+            const targetString = arr.concat(arr).join();
+            
+            return invalidTriples.filter(triple => targetString.includes(triple.join()))
+        }
+
         function isRotationalEquivalent(arr, target) {
             // Check if arr is a rotation of target
             if (arr.length !== target.length) return false;
@@ -456,12 +476,18 @@
         }
 
         function checkBraceletOrder() {
+            [...document.querySelectorAll(`.highlighted-triple`)].forEach(element => element.classList.remove('highlighted-triple'));
+
             const currentOrder = getBraceletOrder();
             if (isRotationalEquivalent(currentOrder, correctOrder)) {
                 alert("You win!");
             } else {
                 alert("Try again.");
-                resetBracelet();
+                
+                const submittedInvalidTriples = getSubmittedInvalidTriples(currentOrder);
+                for (const triple of submittedInvalidTriples) {
+                    document.querySelector(`span[data-index="${invalidTriples.indexOf(triple)}"]`).classList.add('highlighted-triple')
+                }
             }
         }
     </script>
